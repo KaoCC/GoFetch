@@ -77,9 +77,9 @@ func downloadRange(client *http.Client, url string, start uint64, end uint64, fi
 
 }
 
-func downloadFile(url string, splitCount uint64, downloadWait *sync.WaitGroup) {
+func downloadFile(url string, splitCount uint64, downloadWG *sync.WaitGroup) {
 
-	defer downloadWait.Done()
+	defer downloadWG.Done()
 
 	// TODO: convert to client with timeout ?
 	response, err := http.Head(url)
@@ -127,10 +127,10 @@ func downloadFile(url string, splitCount uint64, downloadWait *sync.WaitGroup) {
 	folderName := tmpPrefix + fileName // TODO: add option for default path root
 
 	fileParts := make([]string, splitCount)
-	var fileWP sync.WaitGroup
+	var fileWG sync.WaitGroup
 	for i := range fileParts {
-		fileWP.Add(1)
-		go createParts(fileParts, uint64(i), folderName, fileName, &fileWP)
+		fileWG.Add(1)
+		go createParts(fileParts, uint64(i), folderName, fileName, &fileWG)
 	}
 
 	if _, err := os.Stat(folderName); os.IsNotExist(err) {
@@ -139,7 +139,7 @@ func downloadFile(url string, splitCount uint64, downloadWait *sync.WaitGroup) {
 		log.Println("Tmp Folder Exists ... ")
 	}
 
-	fileWP.Wait()
+	fileWG.Wait()
 
 	var wg sync.WaitGroup
 	client := &http.Client{}
