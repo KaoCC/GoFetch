@@ -13,6 +13,68 @@ import (
 	"sync"
 )
 
+// Merge all downloaded files into one
+func mergeFiles(fileParts []string, folderPath string, fileName string) {
+
+	mergedFile, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+
+	defer mergedFile.Close()
+
+	log.Printf("Start to merge files : [%s] ...\n", fileName)
+
+	success := true
+	for i := range fileParts {
+
+		input, err := os.Open(fileParts[i])
+		if err != nil {
+			log.Println("Can't open file", err)
+			success = false
+			break
+		}
+
+		defer input.Close()
+
+		_, err = io.Copy(mergedFile, input)
+		if err != nil {
+			log.Println("Copy Failed ...", err)
+			success = false
+			break
+		}
+	}
+
+	// check if merged ..
+	if success {
+		log.Println("Success !!!  Deleting Tmp Folder ... ")
+		defer func() {
+			err := os.RemoveAll(folderPath)
+			if err != nil {
+				log.Println("Faile to remove folder ...", err)
+			} else {
+				log.Println("Folder Removed")
+			}
+		}()
+	} else {
+		log.Println("Merged failed ... Keep the files ... ")
+	}
+}
+
+// Create a slice which contains path informaiton of each parts
+func createParts(fileParts []string, partID uint64, folderPath string, fileName string, wg *sync.WaitGroup) {
+
+	defer wg.Done()
+
+	partPath := path.Join(folderPath, fileName)
+
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "%s_%d_%d.part", partPath, partID, len(fileParts))
+
+	fileParts[partID] = builder.String()
+
+}
+
 // Download file context in Range from start to end
 func downloadRange(client *http.Client, url string, start uint64, end uint64, filePath string, wg *sync.WaitGroup) {
 
