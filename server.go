@@ -12,13 +12,14 @@ import (
 	"time"
 )
 
+// Page ... Title: the title of web page. Body: the contend. Resource: the related links.
 type Page struct {
 	Title    string
 	Body     []byte
 	Resource string
 }
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html", "video.html"))
+var renderTemplate = makeRenderer()
 
 func (p *Page) save() error {
 	filename := p.Title + ".txt"
@@ -118,10 +119,15 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 }
 
-func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func makeRenderer() func(w http.ResponseWriter, tmpl string, p *Page) {
+
+	var templates = template.Must(template.ParseFiles("edit.html", "view.html", "video.html"))
+
+	return func(w http.ResponseWriter, tmpl string, p *Page) {
+		err := templates.ExecuteTemplate(w, tmpl+".html", p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }
 
