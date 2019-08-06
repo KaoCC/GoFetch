@@ -5,6 +5,6 @@
   </head>
   <body>
         <h1>Video {{.Title}}</h1>
-    <video src="/resource/{{.Resource}}" width="400px" height="300px" />
+    <video src="/resource/{{index .Resource 0}}" width="400px" height="300px" />
   </body>
 </html>
