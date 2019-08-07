@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sync"
@@ -115,6 +116,12 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 		// check if exist ?
 
+		fileName := path.Base(targetURL)
+		if _, err := os.Stat(fileName); err == nil {
+			log.Printf("File [%s] exists, skip for now ...\n", fileName)
+			continue
+		}
+
 		log.Printf("Start Downloading :[%s] ...\n", targetURL)
 
 		wg.Add(1)
@@ -126,7 +133,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	// show page ?
 
-	http.Redirect(w, r, "/view/"+title, http.StatusFound)
+	http.Redirect(w, r, "/file/"+title, http.StatusFound)
 
 }
 

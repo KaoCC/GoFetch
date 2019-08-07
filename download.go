@@ -151,6 +151,11 @@ func downloadFile(url string, splitCount uint64, downloadWG *sync.WaitGroup) {
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode != http.StatusOK {
+		log.Printf("Status Code: %d, message: %s ... Skip for now", response.StatusCode, response.Status)
+		return
+	}
+
 	// test: check header ...
 	for key, values := range response.Header {
 		for _, value := range values {
