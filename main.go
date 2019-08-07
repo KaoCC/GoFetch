@@ -8,7 +8,7 @@ import (
 )
 
 const tmpPrefix string = "tmp_"
-const defaultSplitCount uint64 = 30
+const defaultSplitCount uint64 = 40
 
 // const defaultInput string = "input.txt"
 
