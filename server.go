@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 	"regexp"
 	"sync"
 	"text/template"
@@ -16,7 +18,7 @@ import (
 type Page struct {
 	Title    string
 	Body     []byte
-	Resource string
+	Resource []string
 }
 
 var renderTemplate = makeRenderer()
@@ -65,7 +67,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 func videoHandler(w http.ResponseWriter, r *http.Request, title string) {
 
-	p := &Page{Title: title, Resource: title + ".mp4"}
+	p := &Page{Title: title, Resource: []string{title + ".mp4"}}
 
 	renderTemplate(w, "video", p)
 }
@@ -84,6 +86,16 @@ func resourceHandler(w http.ResponseWriter, r *http.Request, resource string) {
 	http.ServeContent(w, r, resource, time.Now(), res)
 }
 
+func fileHandler(w http.ResponseWriter, r *http.Request, title string) {
+
+	matches, _ := filepath.Glob("*.mp4")
+
+	p := &Page{Title: title, Resource: matches}
+
+	renderTemplate(w, "file", p)
+}
+
+// TODO: move the download logic to a spearate process or thread
 func downloadHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	input := title + ".txt"
@@ -104,6 +116,12 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 		// check if exist ?
 
+		fileName := path.Base(targetURL)
+		if _, err := os.Stat(fileName); err == nil {
+			log.Printf("File [%s] exists, skip for now ...\n", fileName)
+			continue
+		}
+
 		log.Printf("Start Downloading :[%s] ...\n", targetURL)
 
 		wg.Add(1)
@@ -115,13 +133,13 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	// show page ?
 
-	http.Redirect(w, r, "/view/"+title, http.StatusFound)
+	http.Redirect(w, r, "/file/"+title, http.StatusFound)
 
 }
 
 func makeRenderer() func(w http.ResponseWriter, tmpl string, p *Page) {
 
-	var templates = template.Must(template.ParseFiles("edit.html", "view.html", "video.html"))
+	var templates = template.Must(template.ParseFiles("edit.html", "view.html", "video.html", "file.html"))
 
 	return func(w http.ResponseWriter, tmpl string, p *Page) {
 		err := templates.ExecuteTemplate(w, tmpl+".html", p)
